@@ -1,0 +1,99 @@
+
+package com.salesforce.citi.connector.execute;
+
+import org.antlr.v4.runtime.atn.SemanticContext.AND;
+import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.AdminClientConfig;
+import org.apache.kafka.clients.admin.Config;
+import org.apache.kafka.clients.admin.ConfigEntry;
+import org.apache.kafka.clients.admin.DescribeClusterResult;
+import org.apache.kafka.clients.admin.DescribeConfigsResult;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.config.ConfigResource;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.Collections;
+import java.util.Properties;
+
+
+///////////////////////////
+		
+		KafkaProducer<String, String> kafkaProducer =null;
+		try {
+		kafkaProducer = new KafkaProducer<String, String>(properties);
+		kafkaProducer.send(new ProducerRecord<String, String>(
+				jsonObject.get("TOPIC").toString(),jsonObject.get("TOPIC_KEY").toString(),jsonData.toString()));
+		
+		long maxTopicSizeLong=Long.parseLong(GetKafkaServerConfigurationDetails(properties,"max.message.bytes",jsonObject.get("TOPIC").toString()));
+		
+		Utilities.logMessageInProcessLog("Kafka Topic max.message.bytes < "+maxTopicSizeLong +" > And Current Paylaod Length < "+jsonData.toString().length()+" >");
+		
+		if (maxTopicSizeLong >= jsonData.toString().length())
+			Utilities.logMessageInProcessLog("\nPaylaod Sent To Kafka Topic < "+jsonObject.get("TOPIC").toString()+" > Successfully");
+		else
+			Utilities.logMessageInProcessLog("\nPayload Could Not Be Sent To Kafka Topic < "+jsonObject.get("TOPIC").toString()+" > As Max Supported Size For Topic In Kafka Cluster is < "+maxTopicSizeLong+" > And Current Paylaod Size Is < " +jsonData.toString().length()+" > ");
+		
+		}catch (Exception e){
+            e.printStackTrace();
+        }finally {
+            kafkaProducer.close();
+        }
+
+		
+	}
+
+	public static String GetKafkaServerConfigurationDetails(Properties props,String key,String ResourceType) {
+
+        // Create Kafka admin client
+        try (AdminClient adminClient = AdminClient.create(props)) {
+            // Fetch the cluster configuration
+            
+            // Describe the broker configs
+            ConfigResource brokerResource = new ConfigResource(ConfigResource.Type.TOPIC, ResourceType);
+            DescribeConfigsResult describeResult = adminClient.describeConfigs(Collections.singleton(brokerResource));
+            Config config = describeResult.all().get().get(brokerResource);
+
+            // Retrieve and print the broker configuration details
+            for (ConfigEntry entry : config.entries()) {
+            	if (key.equals(entry.name())) {
+            		Utilities.logMessageInProcessLog("\nKafka Cluster Configuration For  " + entry.name() + " => = " + entry.value());
+            		return entry.value().toString();
+            	}
+            		
+            }
+           
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "0";
+    }
+	
+	
+//	public static void  WriteCSVDataToHDFSFromString(String data) {
+//
+//	
+//	    spark = SparkSession.builder.appName("Stremaing_SalesForceToHDFS").getOrCreate()        
+//	    spark.sparkContext.setLogLevel("WARN")
+//	    json_list =[]
+//	    json_list.append(data)
+//	    df = spark.read.csv(spark.sparkContext.parallelize(json_list))
+//	    
+//	    df.show()
+//	    #df.write.csv("hdfs://localhost:9000/KafkaSalesData/example.csv")
+//	    Index=GetItemIndex(configdata['SEARCH_STRING_FOR_INDEX']['HDFS_SERARCH_1']) 
+//	    df.write.csv(configdata['HDFS'][Index]['URL']+configdata['HDFS'][Index]['HDFS_FILE_PATH']+"FileFromSparkCSV_"+datetime.datetime.now().strftime("%Y%m%d%H%M%S"))
+//	    #print(configdata)
+//	}
+	
+//    public static void main(String[] args){
+//    	new SalesForceConnect();
+//    	//socketConnection();
+//    	SendSalesForceDataToKafkaTopic("test1234");
+//    }
+
+
+}
+
+ 
