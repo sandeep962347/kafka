@@ -18,7 +18,7 @@ public class DatabaseOperations {
 	}
 
 	
-	public static String DecryptData(String encryptedString) {
+	public static String decryptData(String encryptedString) {
 		System.out.println("encryptedString..."+encryptedString);
 		
 		String decryptedString=null;
@@ -32,12 +32,7 @@ public class DatabaseOperations {
 				e.printStackTrace();
 			}
 		else if (((JSONObject)Utilities.configdata.get("SYSTEM_PARAMETERS")).get("CREDENTIAL").equals("FROM_DATABASE"))
-			try {
-				decryptedString=Utilities.executeShellCommand(EncryptDecrypt.decryptPassword(encryptedString));
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			decryptedString=EncryptDecrypt.decryptPassword(encryptedString);
 		
 		 return decryptedString;
 	}
@@ -47,7 +42,7 @@ public class DatabaseOperations {
 		 String  resourceValueString =readFromJar.getApplicationResourcesJar().getProperty(resourcePropertyName);
 		
 		
-		 String decryptedString=DecryptData(resourceValueString);
+		 String decryptedString=decryptData(resourceValueString);
 		 System.out.print("decryptedString..."+decryptedString);
 		 
 		 JSONObject passwordJsonObject=((JSONObject)((JSONArray)((JSONObject)(Utilities.configdata.get("DATABASE"))).get(DBType)).get(index));
@@ -57,7 +52,49 @@ public class DatabaseOperations {
 		 System.out.println(passwordJsonObject);	  
 	}
 	
+	
+	public static JSONObject getEncryptedPasswordFromOracleDBInJson() {
+		
+		String queryString=((JSONObject)((JSONArray)((JSONObject)(Utilities.configdata.get("DATABASE"))).get("ORACLE")).get(0)).get("QUERY_STRING").toString();
+		if (((JSONObject)Utilities.configdata.get("SYSTEM_PARAMETERS")).get("CREDENTIAL").equals("FROM_DATABASE"))
+			 SetDecryptedPasswordForDB("ORACLE_PASSWORD","ORACLE",0);
+		 
+		 List<JSONObject> valuesJsonObjects=DatabaseOperations.GetDataFromDatabase("ORACLE",0, queryString);
+		 for (int i=0;i <valuesJsonObjects.size();i++)
+			 System.out.println(valuesJsonObjects.get(i).toString(4));
+		 	
+		return valuesJsonObjects.get(0);
+	}
 
+	public static String getEncryptedPasswordFromOracleDBInString() {
+		
+		String queryString=((JSONObject)((JSONArray)((JSONObject)(Utilities.configdata.get("DATABASE"))).get("ORACLE")).get(0)).get("QUERY_STRING").toString();
+		if (((JSONObject)Utilities.configdata.get("SYSTEM_PARAMETERS")).get("CREDENTIAL").equals("FROM_DATABASE"))
+			 SetDecryptedPasswordForDB("ORACLE_PASSWORD","ORACLE",0);
+		 
+		 List<JSONObject> valuesJsonObjects=DatabaseOperations.GetDataFromDatabase("ORACLE",0, queryString);
+		 
+		 String decryptedStringString=valuesJsonObjects.get(0).get("PASSWORD")+"#$@"+valuesJsonObjects.get(0).get("CRED_PASS");
+		
+		return decryptedStringString;
+	}
+
+	public static String[] getEncryptedPasswordFromOracleDBInStringArray() {
+		
+		String queryString=((JSONObject)((JSONArray)((JSONObject)(Utilities.configdata.get("DATABASE"))).get("ORACLE")).get(0)).get("QUERY_STRING").toString();
+		if (((JSONObject)Utilities.configdata.get("SYSTEM_PARAMETERS")).get("CREDENTIAL").equals("FROM_DATABASE"))
+			 SetDecryptedPasswordForDB("ORACLE_PASSWORD","ORACLE",0);
+		 
+		 List<JSONObject> valuesJsonObjects=DatabaseOperations.GetDataFromDatabase("ORACLE",0, queryString);
+		 
+		 String decryptedStringString[]=null;
+		 decryptedStringString[0]=valuesJsonObjects.get(0).get("PASSWORD").toString();
+		 decryptedStringString[0]=valuesJsonObjects.get(0).get("CRED_PASS").toString();
+		
+		return decryptedStringString;
+	}
+
+	
 	//################################## Main Function Area ##################################
 	
 	public static void main(String[] args) {
