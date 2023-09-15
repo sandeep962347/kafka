@@ -1,0 +1,74 @@
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.mime.application import MIMEApplication
+from email.mime.image import MIMEImage
+
+# Email configuration
+sender_email = '######'
+sender_password = '#######'
+recipient_email = '########'
+subject = 'Welcome to Our Website'
+
+# SMTP server configuration (for Outlook, use smtp.office365.com)
+smtp_server = 'smtp.office365.com'
+smtp_port = 587
+
+# Create the email message
+message = MIMEMultipart()
+message['From'] = sender_email
+message['To'] = recipient_email
+message['Subject'] = subject
+
+# HTML email body with image, information, and YouTube link
+email_body = """
+<html>
+<head></head>
+<body>
+    <p>Dear User,</p>
+    <p>Welcome to our website! We are excited to have you on board.</p>
+    <p>Here's some information about our favorite animal:</p>
+    <p><strong>Animal Name:</strong> Tiger</p>
+    <p><strong>Description:</strong> The tiger is the largest cat species, known for its distinctive orange coat with black stripes.</p>
+    <p><img src="cid:image1" alt="Tiger Image"></p>  <!-- Embedded image with CID -->
+    <p>Watch a video about tigers on YouTube: <a href="https://youtu.be/tbGslRmPhoM">Click here</a></p>
+    <p>Best regards,<br>Your Name</p>
+</body>
+</html>
+"""
+
+message.attach(MIMEText(email_body, 'html'))
+
+# Attach the PDF file
+pdf_file_path = 'C:/xyz/xyz/Downloads/Welcome message sample.pdf'  # Replace with the actual file path
+with open(pdf_file_path, 'rb') as pdf_file:
+    pdf_attachment = MIMEApplication(pdf_file.read(), _subtype='pdf')
+    pdf_attachment.add_header('content-disposition', 'attachment', filename='Welcome message sample.pdf')
+    message.attach(pdf_attachment)
+
+# Attach the animal image
+image_file_path = 'C:/xyz/xyz/xyz/tiger.jpeg'  # Replace with the actual image file path
+with open(image_file_path, 'rb') as image_file:
+    image_attachment = MIMEImage(image_file.read(), 'jpeg')
+    image_attachment.add_header('Content-ID', '<image1>')  # Assign a unique Content-ID (CID) to reference in HTML
+    message.attach(image_attachment)
+
+# Connect to the SMTP server and send the email
+try:
+    # Create an SMTP object
+    server = smtplib.SMTP(smtp_server, smtp_port)
+    server.starttls()  # Start TLS encryption
+
+    # Login to your email account
+    server.login(sender_email, sender_password)
+
+    # Send the email
+    server.sendmail(sender_email, recipient_email, message.as_string())
+
+    # Quit the SMTP server
+    server.quit()
+
+    print("Email with HTML message, PDF attachment, image, and YouTube link sent successfully!")
+
+except Exception as e:
+    print(f"Error: {str(e)}")
